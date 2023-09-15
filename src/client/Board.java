@@ -1,3 +1,5 @@
+package client;
+
 import java.awt.GridLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -19,6 +21,7 @@ public class Board extends JPanel {
             jButtons[i] = new JButton();
             jButtons[i].setText("");
             jButtons[i].addActionListener(e -> {
+//              增加判断，不直接改本地，上传服务器
                 JButton clickedBtn = (JButton) e.getSource();
                 clickedBtn.setText(String.valueOf(playerSign));
                 clickedBtn.setEnabled(false);
