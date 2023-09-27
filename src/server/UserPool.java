@@ -1,6 +1,7 @@
 package server;
 
 
+import server_interface.PlayerInterface;
 import server_interface.UserPoolInterface;
 
 import java.io.*;
@@ -65,19 +66,23 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
     }
 
     @Override
-    public String signIn(String name) throws IOException {
-        Player newPlayer;
+    public PlayerInterface signIn(String name) throws IOException {
+        Player newPlayer = null;
         if(this.status.containsKey(name)){
-            newPlayer = new Player(name, this.scores.get(name));
+            if (this.status.get(name)==OFFLINE){
+                newPlayer = new Player(name, this.scores.get(name));
+                this.status.remove(name);
+                this.status.put(name,WAITING);
+            }
+
         }else {
             newPlayer = new Player(name);
             this.status.put(name,WAITING);
             this.scores.put(name, 0);
             refreshFile();
         }
-        this.registry.rebind(name, newPlayer);
 
-        return name;
+        return newPlayer;
     }
 
 

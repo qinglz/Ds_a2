@@ -20,8 +20,8 @@ public class ClientMain {
         UserPoolInterface userPool = (UserPoolInterface) registry.lookup("userPool");
         System.out.println(userPool.sayHello());
         System.out.println(userPool.test2("几把物业"));
-        String playerName = userPool.signIn(curPlayer);
-        PlayerInterface player = (PlayerInterface) registry.lookup(playerName);
+        PlayerInterface p = userPool.signIn(curPlayer);
+//        System.out.println(p.getClass());
 
     }
 }
