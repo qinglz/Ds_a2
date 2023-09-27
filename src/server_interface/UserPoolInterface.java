@@ -9,11 +9,11 @@ import java.rmi.RemoteException;
 
 public interface UserPoolInterface extends Remote {
 
-    public String sayHello() throws RemoteException;
+    String sayHello() throws RemoteException;
 
 
-    public String test2(String msg) throws RemoteException;
+    String test2(String msg) throws RemoteException;
 
-    public PlayerInterface signIn(String name) throws IOException;
+    PlayerInterface signIn(String name) throws IOException;
 
 }

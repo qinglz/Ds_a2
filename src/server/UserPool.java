@@ -10,6 +10,8 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
@@ -18,37 +20,41 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
     private static final int PLAYING = 2;
     private static final int RECONNECTING = 3;
 
-    private Map<String, Integer> status;
-    private Map<String, Integer> scores;
+    private Map<Player, Integer> status;
+//    private Map<String, Integer> scores;
+
+//    private Map<String, Player> activitedPlayers = new HashMap<>();
     private final String path;
-    private Registry registry;
+//    private Registry registry;
     public UserPool(String path, Registry registry) throws IOException {
         super();
-        this.registry = registry;
+//        this.registry = registry;
         this.path = path;
         loadPlayers();
+        startMatching();
 
 
     }
 
     private void loadPlayers() throws IOException {
         this.status = new HashMap<>();
-        this.scores = new HashMap<>();
+//        this.scores = new HashMap<>();
         String newline;
         String[] newlineS;
         BufferedReader reader = new BufferedReader(new FileReader(this.path));
         while((newline = reader.readLine())!=null){
             newlineS = newline.split(";");
-            this.status.put(newlineS[0], OFFLINE);
-            this.scores.put(newlineS[0],Integer.parseInt(newlineS[1]));
+            Player newPlayer = new Player(newlineS[0], Integer.parseInt(newlineS[1]));
+            this.status.put(newPlayer, OFFLINE);
+//            this.scores.put(newlineS[0],Integer.parseInt(newlineS[1]));
         }
         reader.close();
 
     }
     private void refreshFile() throws IOException{
         BufferedWriter writer = new BufferedWriter(new FileWriter(this.path));
-        for(Map.Entry<String, Integer> info: this.scores.entrySet()){
-            writer.write(info.getKey()+";"+info.getValue()+";");
+        for(Player p : this.status.keySet()){
+            writer.write(p.getName()+";"+p.getRankPoint()+";");
             writer.newLine();
         }
         writer.close();
@@ -68,22 +74,63 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
     @Override
     public PlayerInterface signIn(String name) throws IOException {
         Player newPlayer = null;
-        if(this.status.containsKey(name)){
-            if (this.status.get(name)==OFFLINE){
-                newPlayer = new Player(name, this.scores.get(name));
-                this.status.remove(name);
-                this.status.put(name,WAITING);
+        if((newPlayer = getPlayerByName(name))!=null){
+            if (this.status.get(newPlayer)==OFFLINE){
+                this.status.remove(newPlayer);
+                this.status.put(newPlayer,WAITING);
             }
 
         }else {
             newPlayer = new Player(name);
-            this.status.put(name,WAITING);
-            this.scores.put(name, 0);
+            this.status.put(newPlayer,WAITING);
             refreshFile();
         }
-
         return newPlayer;
     }
+
+    private Player getPlayerByName(String name){
+        for(Player p : this.status.keySet()){
+            if (p.getName().equals(name)){
+                return p;
+            }
+        }
+        return null;
+    }
+
+    public void match() throws RemoteException {
+        Player single = null;
+        for(Map.Entry<Player, Integer> pStatus: this.status.entrySet()){
+            if (pStatus.getValue()==WAITING){
+                if (single == null){
+                    single = pStatus.getKey();
+                }else {
+                    TicTacToe newGame = new TicTacToe();
+                    single.setGame(newGame);
+                    pStatus.getKey().setGame(newGame);
+                    single = null;
+                }
+
+            }
+        }
+
+    }
+    public void startMatching(){
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    match();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }, 0, 1000L * 3);
+
+    }
+
 
 
 }
