@@ -1,20 +1,27 @@
 package client;
-import java.io.*;
+import server_interface.PlayerInterface;
+import server_interface.UserPoolInterface;
+
+import java.io.IOException;
+import java.rmi.NotBoundException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 
 
 public class ClientMain {
-    public static void main(String[] args) {
-        if (args.length!=2){
-            System.out.println("Invalid Arguments.");
-            return;
-        }
-        try{
-        ClientSocketChannel channel = new ClientSocketChannel(args[0], Integer.parseInt(args[1]));
-//        ClientWindow clientWindow = new ClientWindow(channel);
+    public static void main(String[] args) throws NotBoundException, IOException {
+//        if (args.length!=2){
+//            System.out.println("Invalid Arguments.");
+//            return;
+//        }
+        String curPlayer = "jbwy";
+//      todo: 用户名符号过滤
+        Registry registry = LocateRegistry.getRegistry("localhost",8080);
+        UserPoolInterface userPool = (UserPoolInterface) registry.lookup("userPool");
+        System.out.println(userPool.sayHello());
+        System.out.println(userPool.test2("几把物业"));
+        String playerName = userPool.signIn(curPlayer);
+        PlayerInterface player = (PlayerInterface) registry.lookup(playerName);
 
-        }catch (IOException | ClassNotFoundException | IllegalArgumentException e){
-            System.out.println("Cannot connect to serve, make sure you run server first.");
-//            e.printStackTrace();
-        }
     }
 }
