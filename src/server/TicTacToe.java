@@ -11,4 +11,9 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
     public TicTacToe() throws RemoteException {
         super();
     }
+
+    @Override
+    public String hello() {
+        return "hello";
+    }
 }

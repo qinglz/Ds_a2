@@ -1,11 +1,15 @@
 package client;
 import server_interface.PlayerInterface;
+import server_interface.TicTacToeInterface;
 import server_interface.UserPoolInterface;
 
 import java.io.IOException;
 import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 public class ClientMain {
@@ -21,10 +25,35 @@ public class ClientMain {
         System.out.println(userPool.sayHello());
         System.out.println(userPool.test2("几把物业"));
         PlayerInterface p = userPool.signIn(curPlayer);
-        while(true){
-            System.out.println(p.getGame()==null);
-            Thread.sleep(1000);
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask(){
+            public void run() {
+                synchronized (p){
+                    try {
+                        if (p.getGame()!=null){
+                            p.notify();
+
+                        }
+                        System.out.println("matching");
+                    } catch (RemoteException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }, 5000, 1000);
+
+        synchronized (p){
+            p.wait();
         }
+
+        timer.cancel();
+        TicTacToeInterface t = p.getGame();
+        System.out.println(t.hello());
+
+//        while(true){
+//            System.out.println(p.getGame()==null);
+//            Thread.sleep(1000);
+//        }
 //        System.out.println(p.getClass());
 
     }

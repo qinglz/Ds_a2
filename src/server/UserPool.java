@@ -107,7 +107,13 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
                     TicTacToe newGame = new TicTacToe();
                     single.setGame(newGame);
                     pStatus.getKey().setGame(newGame);
+
+                    this.status.remove(single);
+                    this.status.put(single, PLAYING);
+                    this.status.remove(pStatus.getKey());
+                    this.status.put(pStatus.getKey(),PLAYING);
                     single = null;
+
                 }
 
             }
