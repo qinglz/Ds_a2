@@ -40,7 +40,7 @@ public class ClientMain {
                     }
                 }
             }
-        }, 5000, 1000);
+        }, 1000, 1000);
 
         synchronized (p){
             p.wait();
