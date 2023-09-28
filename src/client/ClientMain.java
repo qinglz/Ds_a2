@@ -48,7 +48,13 @@ public class ClientMain {
 
         timer.cancel();
         TicTacToeInterface t = p.getGame();
-        System.out.println(t.hello());
+        int[][] board = t.getGameBoard();
+        for(int i = 0;i<3;i++){
+            for (int j = 0;j<3;j++){
+                System.out.print(board[i][j]);
+            }
+            System.out.println();
+        }
 
 //        while(true){
 //            System.out.println(p.getGame()==null);
