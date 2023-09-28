@@ -3,6 +3,7 @@ import server_interface.PlayerInterface;
 import server_interface.TicTacToeInterface;
 import server_interface.UserPoolInterface;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -10,6 +11,9 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import static Constants.GameConstants.FINISHED;
+import static Constants.GameConstants.UNKNOWN;
 
 
 public class ClientMain {
@@ -24,14 +28,25 @@ public class ClientMain {
         UserPoolInterface userPool = (UserPoolInterface) registry.lookup("userPool");
         System.out.println(userPool.sayHello());
         System.out.println(userPool.test2("几把物业"));
+
         PlayerInterface p = userPool.signIn(curPlayer);
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask(){
+
+        JFrame jFrame = new JFrame("Tic Tac Toe Game");
+        Board game = new Board();
+        jFrame.getContentPane().add(game);
+        jFrame.setBounds(500, 500, 600, 550);
+        jFrame.setVisible(true);
+        jFrame.setLocationRelativeTo(null);
+
+
+        Timer timer1 = new Timer();
+        timer1.schedule(new TimerTask(){
             public void run() {
                 synchronized (p){
                     try {
                         if (p.getGame()!=null){
                             p.notify();
+
 
                         }
                         System.out.println("matching");
@@ -46,21 +61,42 @@ public class ClientMain {
             p.wait();
         }
 
-        timer.cancel();
+        timer1.cancel();
         TicTacToeInterface t = p.getGame();
-        int[][] board = t.getGameBoard();
-        for(int i = 0;i<3;i++){
-            for (int j = 0;j<3;j++){
-                System.out.print(board[i][j]);
-            }
-            System.out.println();
-        }
 
-//        while(true){
-//            System.out.println(p.getGame()==null);
-//            Thread.sleep(1000);
-//        }
-//        System.out.println(p.getClass());
+        game.activateGame(t,p.getSign());
+
+        System.out.println(p.getSign());
+
+        Timer timer2 = new Timer();
+        timer2.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                synchronized (t){
+                    try {
+                        if(t.getGameStatus()==FINISHED){
+                            game.updateBoard();
+                            t.notify();
+                        }else if(game.getCurSign()!=t.getCurSign()){
+                            game.updateBoard();
+                            System.out.println("updated");
+                        }
+                    } catch (RemoteException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                }
+            }
+        },1000,500);
+
+        synchronized (t){
+            t.wait();
+        }
+        timer2.cancel();
+        int result = t.getWinner();
+        game.showWinner(result);
+        userPool.quitPlayer(curPlayer);
+
 
     }
 }

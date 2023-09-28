@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static Constants.GameConstants.*;
+
 
 public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
     private static final int OFFLINE = 0;
@@ -23,7 +25,7 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
     private Map<Player, Integer> status;
 //    private Map<String, Integer> scores;
 
-//    private Map<String, Player> activitedPlayers = new HashMap<>();
+//    private Map<String, Player> activatedPlayers = new HashMap<>();
     private final String path;
 //    private Registry registry;
     public UserPool(String path, Registry registry) throws IOException {
@@ -107,6 +109,8 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
                     TicTacToe newGame = new TicTacToe();
                     single.setGame(newGame);
                     pStatus.getKey().setGame(newGame);
+                    single.setSign(X);
+                    pStatus.getKey().setSign(O);
 
                     this.status.remove(single);
                     this.status.put(single, PLAYING);
@@ -136,6 +140,19 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
         }, 0, 1000L * 3);
 
     }
+
+    @Override
+    public void quitPlayer(String name){
+        for(Player p: this.status.keySet()){
+            if (p.getName().equals(name)){
+                p.setGame(null);
+                p.setSign(UNASSIGNED);
+                this.status.remove(p);
+                this.status.put(p, OFFLINE);
+            }
+        }
+    }
+
 
 
 

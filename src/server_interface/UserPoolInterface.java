@@ -16,4 +16,6 @@ public interface UserPoolInterface extends Remote {
 
     PlayerInterface signIn(String name) throws IOException;
 
+    void quitPlayer(String name) throws RemoteException;
+
 }

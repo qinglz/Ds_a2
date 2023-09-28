@@ -5,55 +5,36 @@ import server_interface.TicTacToeInterface;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
+import static Constants.GameConstants.*;
 
 
 public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface {
-    private static final int CONTINUE = 0;
-    private static final int INVALID = -1;
-    private static final int DRAW = 3;
-    private static final int X = 1;
-    private static final int O = 2;
-    private static final int EMPTY = 0;
-    private int playerSign = X;
+//    private static final int CONTINUE = 0;
+//    private static final int INVALID = -1;
+//    private static final int DRAW = 3;
+//    private static final int X = 1;
+//    private static final int O = 2;
+//    private static final int EMPTY = 0;
+    private int curSign = X;
 //    private int totalCells = 9;
     private final int totalRows = 3;
     private final int totalColumns = 3;
+    private int gameStatus;
+    private final int [][] gameBoard;
 
-    private int [][] gameBoard;
+    private int winner;
     public TicTacToe() throws RemoteException {
         super();
         this.gameBoard = new int[totalRows][totalColumns];
-    }
-
-    @Override
-    public int makeAMove(int sign, int row, int column){
-        if (sign!=this.playerSign){
-            return INVALID;
-        }
-        if (this.gameBoard[row][column]!=EMPTY){
-            return INVALID;
-        }
-        this.gameBoard[row][column]=sign;
-        if(checkForWinner()){
-            return this.playerSign;
-        }else if(gameDraw()){
-            return DRAW;
-        }
-        changeSign();
-
-        return CONTINUE;
-    }
-
-    @Override
-    public int[][] getGameBoard() throws RemoteException {
-        return this.gameBoard;
+        this.gameStatus = RUNNING;
+        this.winner = UNKNOWN;
     }
 
     private void changeSign(){
-        if(this.playerSign==X){
-            this.playerSign=O;
+        if(this.curSign == X){
+            this.curSign = O;
         }else {
-            this.playerSign=X;
+            this.curSign = X;
         }
     }
 
@@ -61,15 +42,15 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
         return checkAllRows() || checkAllColumns() || checkTheDiagonals();
     }
     private boolean checkAllRows() {
-        if(this.gameBoard[0][0]==X&&this.gameBoard[0][1]==X&&this.gameBoard[0][2]==X){
+        if(this.gameBoard[0][0]== X&&this.gameBoard[0][1]== X&&this.gameBoard[0][2]== X){
             return true;
-        }else if (this.gameBoard[1][0]==X&&this.gameBoard[1][1]==X&&this.gameBoard[1][2]==X){
+        }else if (this.gameBoard[1][0]== X&&this.gameBoard[1][1]== X&&this.gameBoard[1][2]== X){
             return true;
-        }else if (this.gameBoard[2][0]==X&&this.gameBoard[2][1]==X&&this.gameBoard[2][2]==X){
+        }else if (this.gameBoard[2][0]== X&&this.gameBoard[2][1]== X&&this.gameBoard[2][2]== X){
             return true;
-        }else if (this.gameBoard[0][0]==O&&this.gameBoard[0][1]==O&&this.gameBoard[0][2]==O){
+        }else if (this.gameBoard[0][0]== O&&this.gameBoard[0][1]== O&&this.gameBoard[0][2]== O){
             return true;
-        }else if (this.gameBoard[1][0]==O&&this.gameBoard[1][1]==O&&this.gameBoard[1][2]==O){
+        }else if (this.gameBoard[1][0]== O&&this.gameBoard[1][1]== O&&this.gameBoard[1][2]== O){
             return true;
         }else return this.gameBoard[2][0] == O && this.gameBoard[2][1] == O && this.gameBoard[2][2] == O;
     }
@@ -106,6 +87,52 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
             }
         }
         return draw;
+    }
+    @Override
+    public synchronized void makeAMove(int sign, int row, int column){
+        if (sign==this.curSign && this.gameBoard[row][column] == EMPTY&&this.gameStatus==RUNNING){
+            this.gameBoard[row][column]=sign;
+            if(checkForWinner()){
+                this.gameStatus = FINISHED;
+                this.winner = this.curSign;
+            }else if(gameDraw()){
+                this.gameStatus = FINISHED;
+                this.winner = DRAW;
+            }else {
+                System.out.println("change sign");
+                changeSign();
+            }
+        }
+        for (int i =0;i<totalRows;i++){
+            for (int j = 0;j<totalColumns;j++){
+                System.out.print(this.gameBoard[i][j]);
+            }
+            System.out.println();
+        }
+        System.out.println("--------------------");
+
+
+    }
+
+    @Override
+    public int[][] getGameBoard() throws RemoteException {
+        return this.gameBoard;
+    }
+
+    @Override
+    public int getGameStatus() {
+        return gameStatus;
+    }
+
+    @Override
+    public int getWinner() {
+        return winner;
+    }
+
+
+    @Override
+    public int getCurSign() {
+        return curSign;
     }
 
     @Override
