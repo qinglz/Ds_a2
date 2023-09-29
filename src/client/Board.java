@@ -7,10 +7,7 @@ import java.awt.GridLayout;
 import java.rmi.RemoteException;
 import java.util.Timer;
 import java.util.TimerTask;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
+import javax.swing.*;
 
 import static Constants.GameConstants.*;
 
@@ -33,9 +30,11 @@ public class Board extends JPanel {
     private final int totalColumns = 3;
     private final JButton[][] boardButtons = new JButton[totalRows][totalColumns];
     private TicTacToeInterface curGame;
-    private PlayerInterface player;
+//    private PlayerInterface player;
 
-    public Board(PlayerInterface player) {
+    private JLabel timeCount;
+
+    public Board(PlayerInterface player, JLabel timeCount) {
         GridLayout ticTacToeGridLayout = new GridLayout(totalRows, totalColumns);
         setLayout(ticTacToeGridLayout);
         createButtons();
@@ -43,7 +42,8 @@ public class Board extends JPanel {
         this.curGame = null;
         this.active = false;
         this.curSign = UNASSIGNED;
-        this.player = player;
+//        this.player = player;
+        this.timeCount = timeCount;
     }
     public void createButtons() {
         for (int i = 0; i < totalRows; i++) {
@@ -109,6 +109,7 @@ public class Board extends JPanel {
             this.moved = false;
             Timer countDown = new Timer();
             final int[] i = {30};
+            this.timeCount.setText("Your turn!\nTime Remaining: "+i[0]);
             countDown.schedule(new TimerTask() {
                 @Override
                 public void run() {
@@ -122,6 +123,7 @@ public class Board extends JPanel {
                             countDown.cancel();
                         }else {
                             i[0]--;
+                            timeCount.setText("Your turn!\nTime Remaining: "+i[0]);
                             System.out.println(i[0]);
                         }
                     } catch (RemoteException e) {
@@ -130,6 +132,8 @@ public class Board extends JPanel {
 
                 }
             },0,1000);
+        }else if(curSign!=playerSign&&this.curGame.getGameStatus()==RUNNING){
+            this.timeCount.setText("Wait for opponent's move");
         }
     }
 

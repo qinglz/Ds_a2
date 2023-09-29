@@ -35,8 +35,10 @@ public class ClientMain {
         PlayerInterface p = userPool.signIn(curPlayer);
 
         JFrame jFrame = new JFrame("Tic Tac Toe Game");
-        Board game = new Board(p);
         JButton quit = new JButton("Quit");
+        JLabel info = new JLabel("Finding..");
+        JLabel countDown = new JLabel("Waiting for new player coming in..");
+        Board game = new Board(p,countDown);
         quit.addActionListener(e -> {
             try {
                 if(p.getStatus()==PLAYING){
@@ -51,9 +53,8 @@ public class ClientMain {
                 throw new RuntimeException(ex);
             }
         });
-
-
-        jFrame.getContentPane().add(quit);
+        ControlPanel controlPanel = new ControlPanel(quit,countDown,info);
+        jFrame.getContentPane().add(controlPanel);
         jFrame.getContentPane().add(game);
         jFrame.getContentPane().setLayout(new GridLayout());
         jFrame.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
@@ -109,7 +110,7 @@ public class ClientMain {
         TicTacToeInterface t = p.getGame();
 
         game.activateGame(t,p.getSign());
-
+        info.setText("Game Started!");
         System.out.println(p.getSign());
 
         Timer timer2 = new Timer();
