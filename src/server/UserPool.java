@@ -143,20 +143,29 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
 
     @Override
     public void quitPlayer(String name){
-        Set<Player> players = new HashSet<>(this.status.keySet());
-        for(Player p: players){
-            if (p.getName().equals(name)){
-                p.setGame(null);
-                p.setSign(UNASSIGNED);
-                p.setStatus(OFFLINE);
-                this.status.remove(p);
-                this.status.put(p, OFFLINE);
+        Player player = getPlayerByName(name);
+        assert player != null;
+        player.setGame(null);
+        player.setSign(UNASSIGNED);
+        player.setStatus(OFFLINE);
+        this.status.remove(player);
+        this.status.put(player, OFFLINE);
 
-            }
-        }
+
+
     }
 
+    @Override
+    public void reloadPlayer(String name) throws RemoteException {
+        Player player = getPlayerByName(name);
+        assert player != null;
+        player.setStatus(WAITING);
+        player.setGame(null);
+        player.setSign(UNASSIGNED);
+        this.status.remove(player);
+        this.status.put(player,WAITING);
 
+    }
 
 
 }

@@ -45,6 +45,22 @@ public class Board extends JPanel {
 //        this.player = player;
         this.timeCount = timeCount;
     }
+    public void refresh(){
+        this.playerSign = UNASSIGNED;
+        this.curGame = null;
+        this.active = false;
+        this.curSign = UNASSIGNED;
+        this.curRound = 0;
+        for (int i = 0; i < totalRows; i++) {
+            for (int j = 0;j<totalColumns;j++){
+                assert boardButtons[i][j]!=null;
+                boardButtons[i][j].setText("");
+                boardButtons[i][j].setEnabled(true);
+            }
+        }
+
+    }
+
     public void createButtons() {
         for (int i = 0; i < totalRows; i++) {
             for (int j = 0;j<totalColumns;j++){
@@ -108,7 +124,7 @@ public class Board extends JPanel {
         if(curSign==playerSign&&this.curGame.getGameStatus()==RUNNING){
             this.moved = false;
             Timer countDown = new Timer();
-            final int[] i = {30};
+            final int[] i = {20};
             this.timeCount.setText("Your turn!\nTime Remaining: "+i[0]);
             countDown.schedule(new TimerTask() {
                 @Override
