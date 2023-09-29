@@ -8,19 +8,13 @@ import java.io.*;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 import static Constants.GameConstants.*;
 
 
 public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
-    private static final int OFFLINE = 0;
-    private static final int WAITING = 1;
-    private static final int PLAYING = 2;
-    private static final int RECONNECTING = 3;
+
 
     private Map<Player, Integer> status;
 //    private Map<String, Integer> scores;
@@ -78,12 +72,14 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
         Player newPlayer = null;
         if((newPlayer = getPlayerByName(name))!=null){
             if (this.status.get(newPlayer)==OFFLINE){
+                newPlayer.setStatus(WAITING);
                 this.status.remove(newPlayer);
                 this.status.put(newPlayer,WAITING);
             }
 
         }else {
             newPlayer = new Player(name);
+            newPlayer.setStatus(WAITING);
             this.status.put(newPlayer,WAITING);
             refreshFile();
         }
@@ -101,17 +97,21 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
 
     public void match() throws RemoteException {
         Player single = null;
-        for(Map.Entry<Player, Integer> pStatus: this.status.entrySet()){
+        Set<Map.Entry<Player, Integer>> info = new HashSet<>(this.status.entrySet());
+        for(Map.Entry<Player, Integer> pStatus: info){
             if (pStatus.getValue()==WAITING){
                 if (single == null){
                     single = pStatus.getKey();
                 }else {
                     TicTacToe newGame = new TicTacToe();
+                    newGame.setPlayerX(single);
+                    newGame.setPlayerO(pStatus.getKey());
                     single.setGame(newGame);
                     pStatus.getKey().setGame(newGame);
                     single.setSign(X);
                     pStatus.getKey().setSign(O);
-
+                    single.setStatus(PLAYING);
+                    pStatus.getKey().setStatus(PLAYING);
                     this.status.remove(single);
                     this.status.put(single, PLAYING);
                     this.status.remove(pStatus.getKey());
@@ -143,12 +143,15 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
 
     @Override
     public void quitPlayer(String name){
-        for(Player p: this.status.keySet()){
+        Set<Player> players = new HashSet<>(this.status.keySet());
+        for(Player p: players){
             if (p.getName().equals(name)){
                 p.setGame(null);
                 p.setSign(UNASSIGNED);
+                p.setStatus(OFFLINE);
                 this.status.remove(p);
                 this.status.put(p, OFFLINE);
+
             }
         }
     }

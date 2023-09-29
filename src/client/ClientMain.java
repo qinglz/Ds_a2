@@ -4,6 +4,9 @@ import server_interface.TicTacToeInterface;
 import server_interface.UserPoolInterface;
 
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -12,8 +15,8 @@ import java.rmi.registry.Registry;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static Constants.GameConstants.FINISHED;
-import static Constants.GameConstants.UNKNOWN;
+import static Constants.GameConstants.*;
+import static javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE;
 
 
 public class ClientMain {
@@ -32,8 +35,46 @@ public class ClientMain {
         PlayerInterface p = userPool.signIn(curPlayer);
 
         JFrame jFrame = new JFrame("Tic Tac Toe Game");
-        Board game = new Board();
+        Board game = new Board(p);
+        JButton quit = new JButton("Quit");
+        quit.addActionListener(e -> {
+            try {
+                if(p.getStatus()==PLAYING){
+                    p.surrender();
+                    userPool.quitPlayer(curPlayer);
+                    System.exit(0);
+                }else {
+                    userPool.quitPlayer(curPlayer);
+                    System.exit(0);
+                }
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+
+
+        jFrame.getContentPane().add(quit);
         jFrame.getContentPane().add(game);
+        jFrame.getContentPane().setLayout(new GridLayout());
+        jFrame.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        jFrame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                super.windowClosing(e);
+                try {
+                    if(p.getStatus()==PLAYING){
+                        p.surrender();
+                        userPool.quitPlayer(curPlayer);
+                        System.exit(0);
+                    }else {
+                        userPool.quitPlayer(curPlayer);
+                        System.exit(0);
+                    }
+                } catch (RemoteException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
         jFrame.setBounds(500, 500, 600, 550);
         jFrame.setVisible(true);
         jFrame.setLocationRelativeTo(null);
@@ -44,9 +85,10 @@ public class ClientMain {
             public void run() {
                 synchronized (p){
                     try {
-                        if (p.getGame()!=null){
+                        if (p.getStatus()==OFFLINE){
                             p.notify();
-
+                        }else if (p.getGame()!=null){
+                            p.notify();
 
                         }
                         System.out.println("matching");
@@ -60,8 +102,10 @@ public class ClientMain {
         synchronized (p){
             p.wait();
         }
-
         timer1.cancel();
+        if (p.getStatus()==OFFLINE){
+            return;
+        }
         TicTacToeInterface t = p.getGame();
 
         game.activateGame(t,p.getSign());
@@ -74,7 +118,9 @@ public class ClientMain {
             public void run() {
                 synchronized (t){
                     try {
-                        if(t.getGameStatus()==FINISHED){
+                        if(p.getStatus()==OFFLINE){
+                            t.notify();
+                        }else if(t.getGameStatus()==FINISHED){
                             game.updateBoard();
                             t.notify();
                         }else if(game.getCurSign()!=t.getCurSign()){
@@ -93,10 +139,39 @@ public class ClientMain {
             t.wait();
         }
         timer2.cancel();
-        int result = t.getWinner();
-        game.showWinner(result);
-        userPool.quitPlayer(curPlayer);
+        if (p.getStatus()==OFFLINE){
+            return;
+        }
+        String result = t.getWinner();
+        settle(result, curPlayer, userPool);
+//        userPool.quitPlayer(curPlayer);
 
 
+    }
+    public static void settle(String result, String player, UserPoolInterface userPool) throws RemoteException {
+        if (result.equals(player)) {
+            JOptionPane jOptionPane = new JOptionPane();
+            int dialog = JOptionPane.showConfirmDialog(jOptionPane, "Game Over. Congratulation "+result+"! The winner is you.",
+                    "Result", JOptionPane.DEFAULT_OPTION);
+            if (dialog == JOptionPane.OK_OPTION){
+                userPool.quitPlayer(player);
+                System.exit(0);
+            }
+        } else if (result.equals(DRAW)) {
+            JOptionPane jOptionPane = new JOptionPane();
+            int dialog = JOptionPane.showConfirmDialog(jOptionPane, "Game Draw", "Result", JOptionPane.DEFAULT_OPTION);
+            if (dialog == JOptionPane.OK_OPTION){
+                userPool.quitPlayer(player);
+                System.exit(0);
+            }
+        }else if(!result.equals(UNKNOWN)){
+            JOptionPane jOptionPane = new JOptionPane();
+            int dialog = JOptionPane.showConfirmDialog(jOptionPane, "Game Over. Sorry (> <), winner is "+result+". Try to beat your opponent next time. ",
+                    "Result", JOptionPane.DEFAULT_OPTION);
+            if (dialog == JOptionPane.OK_OPTION){
+                userPool.quitPlayer(player);
+                System.exit(0);
+            }
+        }
     }
 }

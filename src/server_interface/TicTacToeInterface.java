@@ -14,5 +14,5 @@ public interface TicTacToeInterface extends Remote {
 
     int getGameStatus() throws RemoteException;
 
-    int getWinner() throws RemoteException;
+    String getWinner() throws RemoteException;
 }

@@ -1,5 +1,6 @@
 package client;
 
+import server_interface.PlayerInterface;
 import server_interface.TicTacToeInterface;
 
 import java.awt.GridLayout;
@@ -16,13 +17,17 @@ public class Board extends JPanel {
     private boolean active;
     private int playerSign;
 
+
+
     private int curSign;
 //    private final int totalCells = 9;
     private final int totalRows = 3;
     private final int totalColumns = 3;
     private final JButton[][] boardButtons = new JButton[totalRows][totalColumns];
     private TicTacToeInterface curGame;
-    public Board() {
+    private PlayerInterface player;
+
+    public Board(PlayerInterface player) {
         GridLayout ticTacToeGridLayout = new GridLayout(totalRows, totalColumns);
         setLayout(ticTacToeGridLayout);
         createButtons();
@@ -30,6 +35,7 @@ public class Board extends JPanel {
         this.curGame = null;
         this.active = false;
         this.curSign = UNASSIGNED;
+        this.player = player;
     }
     public void createButtons() {
         for (int i = 0; i < totalRows; i++) {
@@ -73,26 +79,7 @@ public class Board extends JPanel {
         this.active = true;
     }
 
-    public void showWinner(int result) {
-        if (result == this.playerSign) {
-            JOptionPane jOptionPane = new JOptionPane();
-            int dialog = JOptionPane.showConfirmDialog(jOptionPane, "Game Over. The winner is you. Congratulation! ",
-                    "Result", JOptionPane.DEFAULT_OPTION);
-            if (dialog == JOptionPane.OK_OPTION)
-                System.exit(0);
-        } else if(result == X||result ==O){
-            JOptionPane jOptionPane = new JOptionPane();
-            int dialog = JOptionPane.showConfirmDialog(jOptionPane, "Game Over. Sorry (> <), try to beat your opponent next time. ",
-                    "Result", JOptionPane.DEFAULT_OPTION);
-            if (dialog == JOptionPane.OK_OPTION)
-                System.exit(0);
-        }else if (result == DRAW) {
-            JOptionPane jOptionPane = new JOptionPane();
-            int dialog = JOptionPane.showConfirmDialog(jOptionPane, "Game Draw", "Result", JOptionPane.DEFAULT_OPTION);
-            if (dialog == JOptionPane.OK_OPTION)
-                System.exit(0);
-        }
-    }
+
     public void updateBoard() throws RemoteException {
         int[][] board = this.curGame.getGameBoard();
         for(int i = 0;i<totalRows;i++){
@@ -113,11 +100,11 @@ public class Board extends JPanel {
         return curSign;
     }
 
-    public static void main(String[] args) {
-        JFrame jFrame = new JFrame("Tic Tac Toe Game");
-        jFrame.getContentPane().add(new Board());
-        jFrame.setBounds(500, 500, 600, 550);
-        jFrame.setVisible(true);
-        jFrame.setLocationRelativeTo(null);
-    }
+//    public static void main(String[] args) {
+//        JFrame jFrame = new JFrame("Tic Tac Toe Game");
+//        jFrame.getContentPane().add(new Board());
+//        jFrame.setBounds(500, 500, 600, 550);
+//        jFrame.setVisible(true);
+//        jFrame.setLocationRelativeTo(null);
+//    }
 }

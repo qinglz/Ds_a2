@@ -22,7 +22,10 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
     private int gameStatus;
     private final int [][] gameBoard;
 
-    private int winner;
+    private Player playerX;
+    private Player playerO;
+
+    private String winner;
     public TicTacToe() throws RemoteException {
         super();
         this.gameBoard = new int[totalRows][totalColumns];
@@ -88,13 +91,26 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
         }
         return draw;
     }
+    public void surrender(int sign){
+        this.gameStatus = FINISHED;
+        if(sign == X){
+            this.winner = playerO.getName();
+        }else {
+            this.winner = playerX.getName();
+        }
+    }
     @Override
     public synchronized void makeAMove(int sign, int row, int column){
         if (sign==this.curSign && this.gameBoard[row][column] == EMPTY&&this.gameStatus==RUNNING){
             this.gameBoard[row][column]=sign;
             if(checkForWinner()){
                 this.gameStatus = FINISHED;
-                this.winner = this.curSign;
+                if(curSign == X){
+                    this.winner = playerX.getName();
+                }else {
+                    this.winner = playerO.getName();
+                }
+//                this.winner = this.curSign;
             }else if(gameDraw()){
                 this.gameStatus = FINISHED;
                 this.winner = DRAW;
@@ -125,7 +141,7 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
     }
 
     @Override
-    public int getWinner() {
+    public String getWinner() {
         return winner;
     }
 
@@ -138,5 +154,13 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
     @Override
     public String hello() {
         return "hello";
+    }
+
+    public void setPlayerX(Player playerX) {
+        this.playerX = playerX;
+    }
+
+    public void setPlayerO(Player playerO) {
+        this.playerO = playerO;
     }
 }
