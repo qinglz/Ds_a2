@@ -16,6 +16,8 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
 //    private static final int O = 2;
 //    private static final int EMPTY = 0;
     private int curSign = X;
+
+    private int roundNumber = 1;
 //    private int totalCells = 9;
     private final int totalRows = 3;
     private final int totalColumns = 3;
@@ -117,6 +119,7 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
             }else {
                 System.out.println("change sign");
                 changeSign();
+                roundNumber++;
             }
         }
         for (int i =0;i<totalRows;i++){
@@ -158,6 +161,11 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
 
     public void setPlayerX(Player playerX) {
         this.playerX = playerX;
+    }
+
+    @Override
+    public int getRoundNumber() {
+        return roundNumber;
     }
 
     public void setPlayerO(Player playerO) {

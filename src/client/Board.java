@@ -5,6 +5,8 @@ import server_interface.TicTacToeInterface;
 
 import java.awt.GridLayout;
 import java.rmi.RemoteException;
+import java.util.Timer;
+import java.util.TimerTask;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -16,11 +18,17 @@ public class Board extends JPanel {
 
     private boolean active;
     private int playerSign;
+    private boolean moved;
 
-
+    private int curRound = 0;
 
     private int curSign;
-//    private final int totalCells = 9;
+
+    public int getCurRound() {
+        return curRound;
+    }
+
+    //    private final int totalCells = 9;
     private final int totalRows = 3;
     private final int totalColumns = 3;
     private final JButton[][] boardButtons = new JButton[totalRows][totalColumns];
@@ -47,7 +55,9 @@ public class Board extends JPanel {
                 boardButtons[i][j].addActionListener(e -> {
                     if (this.active&&this.curSign==this.playerSign){
                         try {
+
                             curGame.makeAMove(this.playerSign, finalI, finalJ);
+                            this.moved = true;
 //                            showWinner(result);
                         } catch (RemoteException ex) {
                             throw new RuntimeException(ex);
@@ -81,6 +91,8 @@ public class Board extends JPanel {
 
 
     public void updateBoard() throws RemoteException {
+        this.curRound = curGame.getRoundNumber();
+        this.curSign = this.curGame.getCurSign();
         int[][] board = this.curGame.getGameBoard();
         for(int i = 0;i<totalRows;i++){
             for (int j = 0;j<totalColumns;j++){
@@ -93,11 +105,49 @@ public class Board extends JPanel {
                 }
             }
         }
-        this.curSign = this.curGame.getCurSign();
+        if(curSign==playerSign&&this.curGame.getGameStatus()==RUNNING){
+            this.moved = false;
+            Timer countDown = new Timer();
+            final int[] i = {30};
+            countDown.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                        if(curGame.getGameStatus()==FINISHED){
+                            countDown.cancel();
+                        }else if (moved){
+                            countDown.cancel();
+                        }else if (i[0]==0){
+                            makeRandomMove(board);
+                            countDown.cancel();
+                        }else {
+                            i[0]--;
+                            System.out.println(i[0]);
+                        }
+                    } catch (RemoteException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                }
+            },0,1000);
+        }
     }
 
     public int getCurSign() {
         return curSign;
+    }
+
+    private void makeRandomMove(int [][] gameboard) throws RemoteException {
+        for(int i = 0; i<totalRows;i++){
+            for (int j = 0; j<totalColumns;j++){
+                if(gameboard[i][j]==EMPTY){
+                    this.curGame.makeAMove(this.playerSign,i,j);
+                    this.moved = true;
+                    return;
+                }
+            }
+        }
+
     }
 
 //    public static void main(String[] args) {

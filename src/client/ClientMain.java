@@ -123,7 +123,7 @@ public class ClientMain {
                         }else if(t.getGameStatus()==FINISHED){
                             game.updateBoard();
                             t.notify();
-                        }else if(game.getCurSign()!=t.getCurSign()){
+                        }else if(game.getCurRound()<t.getRoundNumber()){
                             game.updateBoard();
                             System.out.println("updated");
                         }
