@@ -142,7 +142,7 @@ public class Board extends JPanel {
                             i[0]--;
                         }
                     } catch (RemoteException e) {
-                        throw new RuntimeException(e);
+                        System.out.println("Server Shut Down");
                     }
 
                 }

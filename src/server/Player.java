@@ -48,6 +48,10 @@ public class Player extends UnicastRemoteObject implements PlayerInterface {
             this.game.setGameStatus(DOUBLE_PAUSED);
         }
     }
+
+    public int getGameStatus(){
+        return this.game.getGameStatus();
+    }
     @Override
     public String getName() {
         return this.name;

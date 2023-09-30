@@ -1,4 +1,5 @@
 package client;
+import server.UserPool;
 import server_interface.PlayerInterface;
 import server_interface.TicTacToeInterface;
 import server_interface.UserPoolInterface;
@@ -25,16 +26,30 @@ public class ClientMain {
 //            System.out.println("Invalid Arguments.");
 //            return;
 //        }
+        if (args.length!=3){
+            System.out.println("Wrong argument number");
+            return;
+        }
         String curPlayer = args[0];
-//      todo: 用户名符号过滤，启动线程发heart beat。服务器端启动线程检测heart beat。
-        Registry registry = LocateRegistry.getRegistry("localhost",8080);
-        UserPoolInterface userPool = (UserPoolInterface) registry.lookup("userPool");
-        System.out.println(userPool.sayHello());
-        System.out.println(userPool.test2("几把物业"));
-
-        PlayerInterface p = userPool.signIn(curPlayer);
+        PlayerInterface p0 = null;
+        UserPoolInterface userPool0 = null;
+        try {
+            Registry registry = LocateRegistry.getRegistry(args[1],Integer.parseInt(args[2]));
+            userPool0 = (UserPoolInterface) registry.lookup("userPool");
 
 
+            p0 = userPool0.signIn(curPlayer);
+            if (p0==null){
+                System.out.println("Cannot sign in with same username");
+                return;
+            }
+        }catch (Exception e){
+            System.out.println("Cannot connect to server. Make sure your ip and port are correct.");
+            return;
+        }
+
+        PlayerInterface p = p0;
+        UserPoolInterface userPool = userPool0;
         Timer beatTimer = new Timer();
         beatTimer.schedule(new TimerTask() {
             @Override
@@ -42,7 +57,8 @@ public class ClientMain {
                 try {
                     p.heartbeat();
                 } catch (RemoteException e) {
-                    throw new RuntimeException(e);
+                    System.out.println("Server Shut Down");
+                    beatTimer.cancel();
                 }
             }
         },0,1000);
@@ -63,7 +79,7 @@ public class ClientMain {
                     System.exit(0);
                 }
             } catch (RemoteException ex) {
-                throw new RuntimeException(ex);
+                System.out.println("Server Shut Down");
             }
         });
         ControlPanel controlPanel = new ControlPanel(quit,countDown,info);
@@ -85,86 +101,104 @@ public class ClientMain {
                         System.exit(0);
                     }
                 } catch (RemoteException ex) {
-                    throw new RuntimeException(ex);
+                    System.out.println("Server Shut Down");
+//                    throw new RuntimeException(ex);
                 }
             }
         });
         jFrame.setBounds(500, 500, 600, 550);
         jFrame.setVisible(true);
         jFrame.setLocationRelativeTo(null);
+        try {
+            while (true){
+                info.setText("Finding..");
+                countDown.setText("Waiting for new player coming in..");
+                game.refresh();
+                Timer timer1 = new Timer();
+                timer1.schedule(new TimerTask(){
+                    public void run() {
+                        synchronized (p){
+                            try {
+                                if (p.getStatus()==OFFLINE){
+                                    p.notify();
+                                }else if (p.getGame()!=null){
+                                    p.notify();
 
-        while (true){
-            info.setText("Finding..");
-            countDown.setText("Waiting for new player coming in..");
-            game.refresh();
-            Timer timer1 = new Timer();
-            timer1.schedule(new TimerTask(){
-                public void run() {
-                    synchronized (p){
-                        try {
-                            if (p.getStatus()==OFFLINE){
+                                }
+                                System.out.println("matching");
+                            } catch (RemoteException e) {
+                                timer1.cancel();
+                                System.out.println("Server Shut Down");
                                 p.notify();
-                            }else if (p.getGame()!=null){
-                                p.notify();
-
                             }
-                            System.out.println("matching");
-                        } catch (RemoteException e) {
-                            throw new RuntimeException(e);
                         }
                     }
+                }, 100, 500);
+
+                synchronized (p){
+                    p.wait();
                 }
-            }, 100, 500);
+                timer1.cancel();
+                if (p.getStatus()==OFFLINE){
+                    return;
+                }
+                TicTacToeInterface t = p.getGame();
 
-            synchronized (p){
-                p.wait();
-            }
-            timer1.cancel();
-            if (p.getStatus()==OFFLINE){
-                return;
-            }
-            TicTacToeInterface t = p.getGame();
+                game.activateGame(t,p.getSign());
+                info.setText("Game Started!");
+                System.out.println(p.getSign());
 
-            game.activateGame(t,p.getSign());
-            info.setText("Game Started!");
-            System.out.println(p.getSign());
-
-            Timer timer2 = new Timer();
-            timer2.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    synchronized (t){
-                        try {
-                            if(p.getStatus()==OFFLINE){
+                Timer timer2 = new Timer();
+                timer2.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        synchronized (t){
+                            try {
+                                if(p.getStatus()==OFFLINE){
+                                    t.notify();
+                                }else if(t.getGameStatus()==FINISHED){
+                                    game.updateBoard();
+                                    t.notify();
+                                }else if(game.getCurRound()<t.getRoundNumber()){
+                                    game.updateBoard();
+                                    System.out.println("updated");
+                                }else if (game.getGameStatus()!=t.getGameStatus()){
+                                    game.updateBoard();
+                                }
+                            } catch (RemoteException e) {
+                                timer2.cancel();
+                                System.out.println("Server Shut Down");
                                 t.notify();
-                            }else if(t.getGameStatus()==FINISHED){
-                                game.updateBoard();
-                                t.notify();
-                            }else if(game.getCurRound()<t.getRoundNumber()){
-                                game.updateBoard();
-                                System.out.println("updated");
-                            }else if (game.getGameStatus()!=t.getGameStatus()){
-                                game.updateBoard();
+
                             }
-                        } catch (RemoteException e) {
-                            throw new RuntimeException(e);
+
                         }
-
                     }
-                }
-            },100,500);
+                },100,500);
 
-            synchronized (t){
-                t.wait();
-            }
-            timer2.cancel();
-            if (p.getStatus()==OFFLINE){
-                return;
-            }
-            String result = t.getWinner();
+                synchronized (t){
+                    t.wait();
+                }
+                timer2.cancel();
+                if (p.getStatus()==OFFLINE){
+                    return;
+                }
+                String result = t.getWinner();
 //            p.setStatus(CHOOSING);
-            settle(result, curPlayer, userPool);
+                settle(result, curPlayer, userPool);
+            }
+        }catch (Exception e){
+            JDialog errDialog = new JDialog(jFrame);
+            errDialog.setBounds(20,20,400,100);
+            errDialog.setLayout(new FlowLayout(FlowLayout.LEFT,10,20));
+            errDialog.setLocationRelativeTo(jFrame);
+            errDialog.add(new JLabel("Fail To Connect Server"));
+            errDialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            errDialog.setVisible(true);
+            Thread.sleep(5000);
+            System.exit(0);
         }
+
 
 //        userPool.quitPlayer(curPlayer);
 

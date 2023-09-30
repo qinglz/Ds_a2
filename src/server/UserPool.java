@@ -58,15 +58,15 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
 //    }
 
 
-    @Override
-    public String sayHello() throws RemoteException {
-        return "阿米诺斯";
-    }
-
-    @Override
-    public String test2(String msg) throws RemoteException {
-        return msg+"新年好";
-    }
+//    @Override
+//    public String sayHello() throws RemoteException {
+//        return "阿米诺斯";
+//    }
+//
+//    @Override
+//    public String test2(String msg) throws RemoteException {
+//        return msg+"新年好";
+//    }
 
     @Override
     public synchronized PlayerInterface signIn(String name) throws IOException {
@@ -77,12 +77,13 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
 //                newPlayer.setReconnectTime(0);
 //                this.status.remove(newPlayer);
 //                this.status.put(newPlayer,WAITING);
-            }else if(newPlayer.getStatus() ==PLAYING){
+            }else if(newPlayer.getStatus() ==PLAYING||newPlayer.getStatus()==WAITING){
                 return null;
             }else if(newPlayer.getStatus()==RECONNECTING){
                 newPlayer.setReconnectTime(0);
                 newPlayer.setStatus(PLAYING);
                 newPlayer.rejoin();
+                System.out.println(newPlayer.getName()+" reconnects the game");
 //                this.status.remove(newPlayer);
 //                this.status.put(newPlayer,PLAYING);
             }
@@ -191,7 +192,12 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
                     System.out.println(p.getName()+" shuts down. Wait for reconnecting");
                 }
             }else if (p.getStatus()==RECONNECTING){
-                if (p.getReconnectTime()>=10){
+                if (p.getGameStatus()==FINISHED){
+                    p.setGame(null);
+                    p.setSign(UNASSIGNED);
+                    p.setStatus(OFFLINE);
+                    p.setReconnectTime(0);
+                }else if (p.getReconnectTime()>=10){
                     Player op = p.getOpponent();
                     if (op.getStatus()==RECONNECTING){
                         op.setGame(null);
