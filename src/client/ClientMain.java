@@ -111,7 +111,7 @@ public class ClientMain {
         jFrame.setLocationRelativeTo(null);
         try {
             while (true){
-                info.setText("Finding..");
+                info.setText("<html>"+p.getProfile()+"<br>Finding..");
                 countDown.setText("Waiting for new player coming in..");
                 game.refresh();
                 Timer timer1 = new Timer();
@@ -145,7 +145,7 @@ public class ClientMain {
                 TicTacToeInterface t = p.getGame();
 
                 game.activateGame(t,p.getSign());
-                info.setText("Game Started!");
+                info.setText("<html>"+p.getProfile()+"<br>Game Started!<br>Your opponent is "+p.getOpponentProfile());
                 System.out.println(p.getSign());
 
                 Timer timer2 = new Timer();

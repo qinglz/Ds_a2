@@ -13,6 +13,7 @@ public class Player extends UnicastRemoteObject implements PlayerInterface {
     private int rankPoint;
     private TicTacToe game;
 
+    private int rank;
     private int reconnectTime;
 
     private int beats;
@@ -49,6 +50,10 @@ public class Player extends UnicastRemoteObject implements PlayerInterface {
         }
     }
 
+    public void setRank(int rank) {
+        this.rank = rank;
+    }
+
     public int getGameStatus(){
         return this.game.getGameStatus();
     }
@@ -64,6 +69,17 @@ public class Player extends UnicastRemoteObject implements PlayerInterface {
     @Override
     public void heartbeat() throws RemoteException {
         this.beats++;
+    }
+
+    @Override
+    public String getProfile() throws RemoteException {
+        return "RANK #"+this.rank+" "+this.name;
+    }
+
+    @Override
+    public String getOpponentProfile() throws RemoteException {
+        Player p = getOpponent();
+        return "RANK #"+p.rank+" "+p.name;
     }
 
     public void makeGameDraw(){
@@ -94,6 +110,13 @@ public class Player extends UnicastRemoteObject implements PlayerInterface {
 
     public int getRankPoint() {
         return rankPoint;
+    }
+
+    public void reward(int outcome){
+        this.rankPoint+=outcome;
+        if (rankPoint<0){
+            this.rankPoint = 0;
+        }
     }
 
     public void setRankPoint(int rankPoint) {

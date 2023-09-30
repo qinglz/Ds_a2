@@ -19,4 +19,8 @@ public interface PlayerInterface extends Remote {
     String getName() throws RemoteException;
 
     void heartbeat() throws RemoteException;
+
+    String getProfile() throws RemoteException;
+
+    String getOpponentProfile() throws RemoteException;
 }

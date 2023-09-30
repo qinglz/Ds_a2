@@ -24,15 +24,18 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
     private int gameStatus;
     private final int [][] gameBoard;
 
+    private UserPool userPool;
+
     private Player playerX;
     private Player playerO;
 
     private String winner;
-    public TicTacToe() throws RemoteException {
+    public TicTacToe(UserPool userPool) throws RemoteException {
         super();
         this.gameBoard = new int[totalRows][totalColumns];
         this.gameStatus = RUNNING;
         this.winner = UNKNOWN;
+        this.userPool = userPool;
     }
 
     private void changeSign(){
@@ -98,17 +101,32 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
         this.gameStatus = gameStatus;
     }
 
-    public void surrender(int sign){
-        this.gameStatus = FINISHED;
-        if(sign == X){
-            this.winner = playerO.getName();
-        }else {
-            this.winner = playerX.getName();
+    public synchronized void surrender(int sign){
+        if (this.gameStatus!=FINISHED){
+            this.gameStatus = FINISHED;
+            if(sign == X){
+                this.winner = playerO.getName();
+                playerX.reward(-5);
+                playerO.reward(5);
+                userPool.rankPlayers();
+            }else {
+                this.winner = playerX.getName();
+                playerX.reward(5);
+                playerO.reward(-5);
+                userPool.rankPlayers();
+            }
         }
+
     }
     public void unexpectedDraw(){
-        this.gameStatus = FINISHED;
-        this.winner = UNEXPECTED_DRAW;
+        if (this.gameStatus!=FINISHED){
+            this.gameStatus = FINISHED;
+            this.winner = UNEXPECTED_DRAW;
+            playerX.reward(2);
+            playerO.reward(2);
+            userPool.rankPlayers();
+        }
+
     }
 
     public Player getOpponent(int sign){
@@ -126,13 +144,22 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
                 this.gameStatus = FINISHED;
                 if(curSign == X){
                     this.winner = playerX.getName();
+                    playerX.reward(5);
+                    playerO.reward(-5);
+                    userPool.rankPlayers();
                 }else {
+                    playerX.reward(-5);
+                    playerO.reward(5);
                     this.winner = playerO.getName();
+                    userPool.rankPlayers();
                 }
 //                this.winner = this.curSign;
             }else if(gameDraw()){
                 this.gameStatus = FINISHED;
                 this.winner = DRAW;
+                playerX.reward(2);
+                playerO.reward(2);
+                userPool.rankPlayers();
             }else {
                 System.out.println("change sign");
                 changeSign();

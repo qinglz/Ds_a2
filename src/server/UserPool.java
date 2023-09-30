@@ -15,12 +15,8 @@ import static Constants.GameConstants.*;
 public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
 
 
-//    private Map<Player, Integer> status;
     private List<Player> players;
-//    private Map<String, Integer> scores;
 
-//    private Map<String, Player>
-//    private Registry registry;
     public UserPool() throws IOException {
         super();
 //        this.registry = registry;
@@ -33,40 +29,6 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
 
     }
 
-//    private void loadPlayers() throws IOException {
-//        this.status = new HashMap<>();
-////        this.scores = new HashMap<>();
-//        String newline;
-//        String[] newlineS;
-//        BufferedReader reader = new BufferedReader(new FileReader(this.path));
-//        while((newline = reader.readLine())!=null){
-//            newlineS = newline.split(";");
-//            Player newPlayer = new Player(newlineS[0], Integer.parseInt(newlineS[1]));
-//            this.status.put(newPlayer, OFFLINE);
-////            this.scores.put(newlineS[0],Integer.parseInt(newlineS[1]));
-//        }
-//        reader.close();
-//
-//    }
-//    private void refreshFile() throws IOException{
-//        BufferedWriter writer = new BufferedWriter(new FileWriter(this.path));
-//        for(Player p : this.status.keySet()){
-//            writer.write(p.getName()+";"+p.getRankPoint()+";");
-//            writer.newLine();
-//        }
-//        writer.close();
-//    }
-
-
-//    @Override
-//    public String sayHello() throws RemoteException {
-//        return "阿米诺斯";
-//    }
-//
-//    @Override
-//    public String test2(String msg) throws RemoteException {
-//        return msg+"新年好";
-//    }
 
     @Override
     public synchronized PlayerInterface signIn(String name) throws IOException {
@@ -91,6 +53,7 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
             newPlayer = new Player(name);
             newPlayer.setStatus(WAITING);
             this.players.add(newPlayer);
+            newPlayer.setRank(this.players.size());
 //            this.status.put(newPlayer,WAITING);
 //            refreshFile();
         }
@@ -114,7 +77,7 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
                 if (single == null){
                     single = p;
                 }else {
-                    TicTacToe newGame = new TicTacToe();
+                    TicTacToe newGame = new TicTacToe(this);
                     newGame.setPlayerX(single);
                     newGame.setPlayerO(p);
                     single.setGame(newGame);
@@ -231,6 +194,19 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
 
             }
         }, 0, 3000);
+    }
+
+    public synchronized void rankPlayers(){
+        this.players.sort(new Comparator<Player>() {
+            @Override
+            public int compare(Player o1, Player o2) {
+                return Integer.compare(o2.getRankPoint(), o1.getRankPoint());
+            }
+        });
+        for (int i = 1;i<=this.players.size();i++){
+           this.players.get(i-1).setRank(i);
+        }
+
     }
 
 
