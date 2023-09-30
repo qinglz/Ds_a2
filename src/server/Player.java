@@ -13,34 +13,75 @@ public class Player extends UnicastRemoteObject implements PlayerInterface {
     private int rankPoint;
     private TicTacToe game;
 
+    private int reconnectTime;
+
+    private int beats;
+
     private int status;
     private int sign;
 
     public Player(String name) throws RemoteException {
         super();
         this.name = name;
+        this.beats=0;
         this.rankPoint = 0;
         this.game = null;
         this.sign = UNASSIGNED;
         this.status = OFFLINE;
-    }
-    public Player(String name, int rankPoint) throws RemoteException {
-        super();
-        this.name = name;
-        this.rankPoint = rankPoint;
-        this.game = null;
-        this.sign = UNASSIGNED;
-        this.status = OFFLINE;
-
+        this.reconnectTime = 0;
     }
 
     public void rejoin(){
         assert this.game!=null;
-        this.game.setGameStatus(RUNNING);
+        if (this.game.getGameStatus()==PAUSED){
+            this.game.setGameStatus(RUNNING);
+        }else {
+            this.game.setGameStatus(PAUSED);
+        }
+    }
+
+    public void pause(){
+        assert this.game!=null;
+        if (this.game.getGameStatus()==RUNNING){
+            this.game.setGameStatus(PAUSED);
+        }else {
+            this.game.setGameStatus(DOUBLE_PAUSED);
+        }
     }
     @Override
     public String getName() {
         return this.name;
+    }
+
+    public Player getOpponent(){
+        return this.game.getOpponent(this.sign);
+    }
+
+    @Override
+    public void heartbeat() throws RemoteException {
+        this.beats++;
+    }
+
+    public void makeGameDraw(){
+        this.game.unexpectedDraw();
+    }
+
+    public boolean isAlive(){
+        boolean alive = this.beats>0;
+        this.beats = 0;
+        return alive;
+    }
+
+    public int getReconnectTime() {
+        return reconnectTime;
+    }
+
+    public void setReconnectTime(int reconnectTime) {
+        this.reconnectTime = reconnectTime;
+    }
+
+    public void increaseReconnectTime(){
+        this.reconnectTime++;
     }
 
     public void setName(String name) {
@@ -73,7 +114,6 @@ public class Player extends UnicastRemoteObject implements PlayerInterface {
 
     @Override
     public int getStatus(){return status;}
-    @Override
     public void setStatus(int status) {
         this.status = status;
     }

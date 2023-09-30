@@ -106,6 +106,18 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
             this.winner = playerX.getName();
         }
     }
+    public void unexpectedDraw(){
+        this.gameStatus = FINISHED;
+        this.winner = UNEXPECTED_DRAW;
+    }
+
+    public Player getOpponent(int sign){
+        if(sign==X){
+            return this.playerO;
+        }else {
+            return this.playerX;
+        }
+    }
     @Override
     public synchronized void makeAMove(int sign, int row, int column){
         if (sign==this.curSign && this.gameBoard[row][column] == EMPTY&&this.gameStatus==RUNNING){

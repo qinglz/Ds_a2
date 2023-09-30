@@ -6,7 +6,6 @@ import server_interface.UserPoolInterface;
 
 import java.io.*;
 import java.rmi.RemoteException;
-import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 
@@ -16,7 +15,8 @@ import static Constants.GameConstants.*;
 public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
 
 
-    private Map<Player, Integer> status;
+//    private Map<Player, Integer> status;
+    private List<Player> players;
 //    private Map<String, Integer> scores;
 
 //    private Map<String, Player>
@@ -25,8 +25,10 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
         super();
 //        this.registry = registry;
 //        loadPlayers();
-        this.status = new HashMap<>();
+//        this.status = new HashMap<>();
+        this.players = new ArrayList<>();
         startMatching();
+        startPlayersUpdate();
 
 
     }
@@ -70,22 +72,25 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
     public synchronized PlayerInterface signIn(String name) throws IOException {
         Player newPlayer = null;
         if((newPlayer = getPlayerByName(name))!=null){
-            if (this.status.get(newPlayer)==OFFLINE){
+            if (newPlayer.getStatus()==OFFLINE){
                 newPlayer.setStatus(WAITING);
-                this.status.remove(newPlayer);
-                this.status.put(newPlayer,WAITING);
-            }else if(this.status.get(newPlayer)==PLAYING){
+//                newPlayer.setReconnectTime(0);
+//                this.status.remove(newPlayer);
+//                this.status.put(newPlayer,WAITING);
+            }else if(newPlayer.getStatus() ==PLAYING){
                 return null;
-            }else if(this.status.get(newPlayer)==RECONNECTING){
+            }else if(newPlayer.getStatus()==RECONNECTING){
+                newPlayer.setReconnectTime(0);
                 newPlayer.setStatus(PLAYING);
                 newPlayer.rejoin();
-                this.status.remove(newPlayer);
-                this.status.put(newPlayer,PLAYING);
+//                this.status.remove(newPlayer);
+//                this.status.put(newPlayer,PLAYING);
             }
         }else {
             newPlayer = new Player(name);
             newPlayer.setStatus(WAITING);
-            this.status.put(newPlayer,WAITING);
+            this.players.add(newPlayer);
+//            this.status.put(newPlayer,WAITING);
 //            refreshFile();
         }
         return newPlayer;
@@ -93,7 +98,7 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
     }
 
     private Player getPlayerByName(String name){
-        for(Player p : this.status.keySet()){
+        for(Player p : this.players){
             if (p.getName().equals(name)){
                 return p;
             }
@@ -103,25 +108,20 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
 
     public synchronized void match() throws RemoteException {
         Player single = null;
-        Set<Map.Entry<Player, Integer>> info = new HashSet<>(this.status.entrySet());
-        for(Map.Entry<Player, Integer> pStatus: info){
-            if (pStatus.getValue()==WAITING){
+        for(Player p : players){
+            if (p.getStatus() == WAITING){
                 if (single == null){
-                    single = pStatus.getKey();
+                    single = p;
                 }else {
                     TicTacToe newGame = new TicTacToe();
                     newGame.setPlayerX(single);
-                    newGame.setPlayerO(pStatus.getKey());
+                    newGame.setPlayerO(p);
                     single.setGame(newGame);
-                    pStatus.getKey().setGame(newGame);
+                    p.setGame(newGame);
                     single.setSign(X);
-                    pStatus.getKey().setSign(O);
+                    p.setSign(O);
                     single.setStatus(PLAYING);
-                    pStatus.getKey().setStatus(PLAYING);
-                    this.status.remove(single);
-                    this.status.put(single, PLAYING);
-                    this.status.remove(pStatus.getKey());
-                    this.status.put(pStatus.getKey(),PLAYING);
+                    p.setStatus(PLAYING);
                     single = null;
 
                 }
@@ -154,8 +154,8 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
         player.setGame(null);
         player.setSign(UNASSIGNED);
         player.setStatus(OFFLINE);
-        this.status.remove(player);
-        this.status.put(player, OFFLINE);
+//        this.status.remove(player);
+//        this.status.put(player, OFFLINE);
 
 
 
@@ -168,9 +168,63 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
         player.setStatus(WAITING);
         player.setGame(null);
         player.setSign(UNASSIGNED);
-        this.status.remove(player);
-        this.status.put(player,WAITING);
+//        this.status.remove(player);
+//        this.status.put(player,WAITING);
 
+    }
+
+    public synchronized void playersStatusUpdate(){
+        for(Player p : players){
+            if (p.getStatus()==WAITING) {
+                if (!p.isAlive()){
+                    p.setGame(null);
+                    p.setSign(UNASSIGNED);
+                    p.setStatus(OFFLINE);
+                    System.out.println(p.getName()+" shuts down.");
+//                    this.status.remove(pStatus.getKey());
+//                    this.status.put(pStatus.getKey(), OFFLINE);
+                }
+            }else if (p.getStatus()==PLAYING){
+                if (!p.isAlive()){
+                    p.pause();
+                    p.setStatus(RECONNECTING);
+                    System.out.println(p.getName()+" shuts down. Wait for reconnecting");
+                }
+            }else if (p.getStatus()==RECONNECTING){
+                if (p.getReconnectTime()>=10){
+                    Player op = p.getOpponent();
+                    if (op.getStatus()==RECONNECTING){
+                        op.setGame(null);
+                        op.setSign(UNASSIGNED);
+                        op.setStatus(OFFLINE);
+                        op.setReconnectTime(0);
+                    }
+                    p.makeGameDraw();
+                    p.setGame(null);
+                    p.setSign(UNASSIGNED);
+                    p.setStatus(OFFLINE);
+                    p.setReconnectTime(0);
+                    System.out.println(p.getName()+" can not reconnect.");
+
+                }else {
+                    p.increaseReconnectTime();
+                }
+            }
+        }
+    }
+    public void startPlayersUpdate(){
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    playersStatusUpdate();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }, 0, 3000);
     }
 
 

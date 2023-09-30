@@ -34,11 +34,24 @@ public class ClientMain {
 
         PlayerInterface p = userPool.signIn(curPlayer);
 
+
+        Timer beatTimer = new Timer();
+        beatTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    p.heartbeat();
+                } catch (RemoteException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        },0,1000);
+
         JFrame jFrame = new JFrame("Tic Tac Toe Game");
         JButton quit = new JButton("Quit");
         JLabel info = new JLabel();
         JLabel countDown = new JLabel();
-        Board game = new Board(p,countDown);
+        Board game = new Board(countDown);
         quit.addActionListener(e -> {
             try {
                 if(p.getStatus()==PLAYING){
@@ -130,6 +143,8 @@ public class ClientMain {
                             }else if(game.getCurRound()<t.getRoundNumber()){
                                 game.updateBoard();
                                 System.out.println("updated");
+                            }else if (game.getGameStatus()!=t.getGameStatus()){
+                                game.updateBoard();
                             }
                         } catch (RemoteException e) {
                             throw new RuntimeException(e);
@@ -147,6 +162,7 @@ public class ClientMain {
                 return;
             }
             String result = t.getWinner();
+//            p.setStatus(CHOOSING);
             settle(result, curPlayer, userPool);
         }
 
@@ -155,12 +171,13 @@ public class ClientMain {
 
     }
     public static void settle(String result, String player, UserPoolInterface userPool) throws RemoteException {
+        userPool.quitPlayer(player);
         if (result.equals(player)) {
             JOptionPane jOptionPane = new JOptionPane();
             int dialog = JOptionPane.showConfirmDialog(jOptionPane, "Game Over. Congratulation "+result+"! The winner is you.\nDo you want to start a new game?",
                     "Result", JOptionPane.YES_NO_OPTION);
             if (dialog == JOptionPane.NO_OPTION){
-                userPool.quitPlayer(player);
+//                userPool.quitPlayer(player);
                 System.exit(0);
             }else {
                 userPool.reloadPlayer(player);
@@ -169,17 +186,26 @@ public class ClientMain {
             JOptionPane jOptionPane = new JOptionPane();
             int dialog = JOptionPane.showConfirmDialog(jOptionPane, "Game Draw.\nDo you want to start a new game?", "Result", JOptionPane.YES_NO_OPTION);
             if (dialog == JOptionPane.NO_OPTION){
-                userPool.quitPlayer(player);
+//                userPool.quitPlayer(player);
                 System.exit(0);
             }else {
                 userPool.reloadPlayer(player);
             }
-        }else if(!result.equals(UNKNOWN)){
+        } else if (result.equals(UNEXPECTED_DRAW)) {
+            JOptionPane jOptionPane = new JOptionPane();
+            int dialog = JOptionPane.showConfirmDialog(jOptionPane, "Game Draw due to the opponent cannot reconnect.\nDo you want to start a new game?", "Result", JOptionPane.YES_NO_OPTION);
+            if (dialog == JOptionPane.NO_OPTION){
+//                userPool.quitPlayer(player);
+                System.exit(0);
+            }else {
+                userPool.reloadPlayer(player);
+            }
+        } else if(!result.equals(UNKNOWN)){
             JOptionPane jOptionPane = new JOptionPane();
             int dialog = JOptionPane.showConfirmDialog(jOptionPane, "Game Over. Sorry (> <), winner is "+result+". Try to beat your opponent next time.\nDo you want to start a new game?",
                     "Result", JOptionPane.YES_NO_OPTION);
             if (dialog == JOptionPane.NO_OPTION){
-                userPool.quitPlayer(player);
+//                userPool.quitPlayer(player);
                 System.exit(0);
             }else {
                 userPool.reloadPlayer(player);

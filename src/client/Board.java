@@ -1,6 +1,5 @@
 package client;
 
-import server_interface.PlayerInterface;
 import server_interface.TicTacToeInterface;
 
 import java.awt.GridLayout;
@@ -13,7 +12,6 @@ import static Constants.GameConstants.*;
 
 public class Board extends JPanel {
 
-    private boolean active;
     private int playerSign;
     private boolean moved;
 
@@ -21,9 +19,8 @@ public class Board extends JPanel {
 
     private int curSign;
 
-    public int getCurRound() {
-        return curRound;
-    }
+
+    private int gameStatus;
 
     //    private final int totalCells = 9;
     private final int totalRows = 3;
@@ -34,22 +31,24 @@ public class Board extends JPanel {
 
     private JLabel timeCount;
 
-    public Board(PlayerInterface player, JLabel timeCount) {
+    public Board(JLabel timeCount) {
         GridLayout ticTacToeGridLayout = new GridLayout(totalRows, totalColumns);
         setLayout(ticTacToeGridLayout);
         createButtons();
         this.playerSign = UNASSIGNED;
         this.curGame = null;
-        this.active = false;
+//        this.active = false;
         this.curSign = UNASSIGNED;
+        this.gameStatus = NOT_START;
 //        this.player = player;
         this.timeCount = timeCount;
     }
     public void refresh(){
         this.playerSign = UNASSIGNED;
         this.curGame = null;
-        this.active = false;
+//        this.active = false;
         this.curSign = UNASSIGNED;
+        this.gameStatus = NOT_START;
         this.curRound = 0;
         for (int i = 0; i < totalRows; i++) {
             for (int j = 0;j<totalColumns;j++){
@@ -69,7 +68,7 @@ public class Board extends JPanel {
                 int finalI = i;
                 int finalJ = j;
                 boardButtons[i][j].addActionListener(e -> {
-                    if (this.active&&this.curSign==this.playerSign){
+                    if (this.gameStatus==RUNNING&&this.curSign==this.playerSign){
                         try {
                             curGame.makeAMove(this.playerSign, finalI, finalJ);
                             this.moved = true;
@@ -101,13 +100,14 @@ public class Board extends JPanel {
                 this.boardButtons[i][j].setEnabled(true);
             }
         }
-        this.active = true;
+        this.gameStatus = RUNNING;
     }
 
 
     public void updateBoard() throws RemoteException {
         this.curRound = curGame.getRoundNumber();
         this.curSign = this.curGame.getCurSign();
+        this.gameStatus = this.curGame.getGameStatus();
         int[][] board = this.curGame.getGameBoard();
         for(int i = 0;i<totalRows;i++){
             for (int j = 0;j<totalColumns;j++){
@@ -120,7 +120,7 @@ public class Board extends JPanel {
                 }
             }
         }
-        if(curSign==playerSign&&this.curGame.getGameStatus()==RUNNING){
+        if(curSign==playerSign&&this.gameStatus==RUNNING){
             this.moved = false;
             Timer countDown = new Timer();
             final int[] i = {20};
@@ -129,7 +129,7 @@ public class Board extends JPanel {
                 @Override
                 public void run() {
                     try {
-                        if(curGame.getGameStatus()==FINISHED){
+                        if(gameStatus!=RUNNING){
                             countDown.cancel();
                         }else if (moved){
                             countDown.cancel();
@@ -147,13 +147,20 @@ public class Board extends JPanel {
 
                 }
             },0,1000);
-        }else if(curSign!=playerSign&&this.curGame.getGameStatus()==RUNNING){
+        }else if(curSign!=playerSign&&this.gameStatus==RUNNING){
             this.timeCount.setText("Wait for opponent's move");
+        }else if (this.gameStatus==PAUSED){
+            this.timeCount.setText("Opponent shuts down, please wait for reconnecting");
         }
     }
 
-    public int getCurSign() {
-        return curSign;
+
+    public int getCurRound() {
+        return curRound;
+    }
+
+    public int getGameStatus() {
+        return gameStatus;
     }
 
     private void makeRandomMove(int [][] gameBoard) throws RemoteException {
