@@ -19,42 +19,41 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
     private Map<Player, Integer> status;
 //    private Map<String, Integer> scores;
 
-//    private Map<String, Player> activatedPlayers = new HashMap<>();
-    private final String path;
+//    private Map<String, Player>
 //    private Registry registry;
-    public UserPool(String path, Registry registry) throws IOException {
+    public UserPool() throws IOException {
         super();
 //        this.registry = registry;
-        this.path = path;
-        loadPlayers();
+//        loadPlayers();
+        this.status = new HashMap<>();
         startMatching();
 
 
     }
 
-    private void loadPlayers() throws IOException {
-        this.status = new HashMap<>();
-//        this.scores = new HashMap<>();
-        String newline;
-        String[] newlineS;
-        BufferedReader reader = new BufferedReader(new FileReader(this.path));
-        while((newline = reader.readLine())!=null){
-            newlineS = newline.split(";");
-            Player newPlayer = new Player(newlineS[0], Integer.parseInt(newlineS[1]));
-            this.status.put(newPlayer, OFFLINE);
-//            this.scores.put(newlineS[0],Integer.parseInt(newlineS[1]));
-        }
-        reader.close();
-
-    }
-    private void refreshFile() throws IOException{
-        BufferedWriter writer = new BufferedWriter(new FileWriter(this.path));
-        for(Player p : this.status.keySet()){
-            writer.write(p.getName()+";"+p.getRankPoint()+";");
-            writer.newLine();
-        }
-        writer.close();
-    }
+//    private void loadPlayers() throws IOException {
+//        this.status = new HashMap<>();
+////        this.scores = new HashMap<>();
+//        String newline;
+//        String[] newlineS;
+//        BufferedReader reader = new BufferedReader(new FileReader(this.path));
+//        while((newline = reader.readLine())!=null){
+//            newlineS = newline.split(";");
+//            Player newPlayer = new Player(newlineS[0], Integer.parseInt(newlineS[1]));
+//            this.status.put(newPlayer, OFFLINE);
+////            this.scores.put(newlineS[0],Integer.parseInt(newlineS[1]));
+//        }
+//        reader.close();
+//
+//    }
+//    private void refreshFile() throws IOException{
+//        BufferedWriter writer = new BufferedWriter(new FileWriter(this.path));
+//        for(Player p : this.status.keySet()){
+//            writer.write(p.getName()+";"+p.getRankPoint()+";");
+//            writer.newLine();
+//        }
+//        writer.close();
+//    }
 
 
     @Override
@@ -68,22 +67,29 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
     }
 
     @Override
-    public PlayerInterface signIn(String name) throws IOException {
+    public synchronized PlayerInterface signIn(String name) throws IOException {
         Player newPlayer = null;
         if((newPlayer = getPlayerByName(name))!=null){
             if (this.status.get(newPlayer)==OFFLINE){
                 newPlayer.setStatus(WAITING);
                 this.status.remove(newPlayer);
                 this.status.put(newPlayer,WAITING);
+            }else if(this.status.get(newPlayer)==PLAYING){
+                return null;
+            }else if(this.status.get(newPlayer)==RECONNECTING){
+                newPlayer.setStatus(PLAYING);
+                newPlayer.rejoin();
+                this.status.remove(newPlayer);
+                this.status.put(newPlayer,PLAYING);
             }
-
         }else {
             newPlayer = new Player(name);
             newPlayer.setStatus(WAITING);
             this.status.put(newPlayer,WAITING);
-            refreshFile();
+//            refreshFile();
         }
         return newPlayer;
+
     }
 
     private Player getPlayerByName(String name){
@@ -95,7 +101,7 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
         return null;
     }
 
-    public void match() throws RemoteException {
+    public synchronized void match() throws RemoteException {
         Player single = null;
         Set<Map.Entry<Player, Integer>> info = new HashSet<>(this.status.entrySet());
         for(Map.Entry<Player, Integer> pStatus: info){
@@ -142,7 +148,7 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
     }
 
     @Override
-    public void quitPlayer(String name){
+    public synchronized void quitPlayer(String name){
         Player player = getPlayerByName(name);
         assert player != null;
         player.setGame(null);
@@ -156,7 +162,7 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
     }
 
     @Override
-    public void reloadPlayer(String name) throws RemoteException {
+    public synchronized void reloadPlayer(String name) throws RemoteException {
         Player player = getPlayerByName(name);
         assert player != null;
         player.setStatus(WAITING);

@@ -6,8 +6,7 @@ import server_interface.TicTacToeInterface;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
-import static Constants.GameConstants.OFFLINE;
-import static Constants.GameConstants.UNASSIGNED;
+import static Constants.GameConstants.*;
 
 public class Player extends UnicastRemoteObject implements PlayerInterface {
     private String name;
@@ -34,6 +33,11 @@ public class Player extends UnicastRemoteObject implements PlayerInterface {
         this.status = OFFLINE;
 
     }
+
+    public void rejoin(){
+        assert this.game!=null;
+        this.game.setGameStatus(RUNNING);
+    }
     @Override
     public String getName() {
         return this.name;
@@ -59,7 +63,7 @@ public class Player extends UnicastRemoteObject implements PlayerInterface {
         this.game.surrender(this.sign);
     }
     @Override
-    public synchronized void setSign(int sign) {
+    public void setSign(int sign) {
         this.sign = sign;
     }
     @Override
@@ -70,7 +74,7 @@ public class Player extends UnicastRemoteObject implements PlayerInterface {
     @Override
     public int getStatus(){return status;}
     @Override
-    public synchronized void setStatus(int status) {
+    public void setStatus(int status) {
         this.status = status;
     }
 

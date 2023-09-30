@@ -101,7 +101,7 @@ public class ClientMain {
                         }
                     }
                 }
-            }, 1000, 1000);
+            }, 100, 500);
 
             synchronized (p){
                 p.wait();
@@ -137,7 +137,7 @@ public class ClientMain {
 
                     }
                 }
-            },1000,500);
+            },100,500);
 
             synchronized (t){
                 t.wait();

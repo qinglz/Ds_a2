@@ -93,6 +93,11 @@ public class TicTacToe extends UnicastRemoteObject implements TicTacToeInterface
         }
         return draw;
     }
+
+    public void setGameStatus(int gameStatus) {
+        this.gameStatus = gameStatus;
+    }
+
     public void surrender(int sign){
         this.gameStatus = FINISHED;
         if(sign == X){

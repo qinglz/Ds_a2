@@ -71,7 +71,6 @@ public class Board extends JPanel {
                 boardButtons[i][j].addActionListener(e -> {
                     if (this.active&&this.curSign==this.playerSign){
                         try {
-
                             curGame.makeAMove(this.playerSign, finalI, finalJ);
                             this.moved = true;
 //                            showWinner(result);
@@ -138,9 +137,9 @@ public class Board extends JPanel {
                             makeRandomMove(board);
                             countDown.cancel();
                         }else {
-                            i[0]--;
                             timeCount.setText("Your turn!\nTime Remaining: "+i[0]);
                             System.out.println(i[0]);
+                            i[0]--;
                         }
                     } catch (RemoteException e) {
                         throw new RuntimeException(e);
@@ -157,10 +156,10 @@ public class Board extends JPanel {
         return curSign;
     }
 
-    private void makeRandomMove(int [][] gameboard) throws RemoteException {
+    private void makeRandomMove(int [][] gameBoard) throws RemoteException {
         for(int i = 0; i<totalRows;i++){
             for (int j = 0; j<totalColumns;j++){
-                if(gameboard[i][j]==EMPTY){
+                if(gameBoard[i][j]==EMPTY){
                     this.curGame.makeAMove(this.playerSign,i,j);
                     this.moved = true;
                     return;
