@@ -8,8 +8,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -21,7 +19,7 @@ import static javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE;
 
 
 public class ClientMain {
-    public static void main(String[] args) throws NotBoundException, IOException, InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
 //        if (args.length!=2){
 //            System.out.println("Invalid Arguments.");
 //            return;

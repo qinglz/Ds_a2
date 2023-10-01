@@ -197,12 +197,7 @@ public class UserPool extends UnicastRemoteObject implements UserPoolInterface {
     }
 
     public synchronized void rankPlayers(){
-        this.players.sort(new Comparator<Player>() {
-            @Override
-            public int compare(Player o1, Player o2) {
-                return Integer.compare(o2.getRankPoint(), o1.getRankPoint());
-            }
-        });
+        this.players.sort((o1, o2) -> Integer.compare(o2.getRankPoint(), o1.getRankPoint()));
         for (int i = 1;i<=this.players.size();i++){
            this.players.get(i-1).setRank(i);
         }
